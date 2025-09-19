@@ -3,16 +3,16 @@ from discord.ext import commands
 from discord import app_commands, ui
 import asyncio
 import os
+from flask import Flask
+from threading import Thread
 
 # --- CONFIGURAÇÕES ---
 TOKEN = os.getenv("DISCORD_TOKEN")
 ID_CARGO_SEM_REGISTRO = 1418396595153539248
 ID_CARGO_APROVADOR = 1401064899597172746
 ID_CANAL_APROVACAO = 1418396682093330493
-
-# NOVO: Configurações para a mensagem de boas-vindas
-ID_CANAL_BEMVINDO = 1418396564342177813 # <-- COLOQUE O ID DO SEU CANAL DE BOAS-VINDAS
-URL_IMAGEM_BEMVINDO = "https://cdn.discordapp.com/attachments/1418369933951238342/1418373459951620136/unnamed.png?ex=68cde2b8&is=68cc9138&hm=93fc8e238c1eb5ffd70c846d0a07263fa5399c77683298284afb06a0448426c8&" # <-- COLOQUE O LINK DA IMAGEM/GIF
+ID_CANAL_BEMVINDO = 1418396564342177813
+URL_IMAGEM_BEMVINDO = "https://cdn.discordapp.com/attachments/1418369933951238342/1418373459951620136/unnamed.png?ex=68cde2b8&is=68cc9138&hm=93fc8e238c1eb5ffd70c846d0a07263fa5399c77683298284afb06a0448426c8&"
 
 # Dicionário para mapear o NOME da patente para o ID do CARGO
 PATENTES_E_CARGOS = {
@@ -27,24 +27,20 @@ PATENTES_E_CARGOS = {
     "1° Tenente Tx": 1387981754559893626,
     "Capitã Tx": 1387981753569902804,
     "Capitão Tx": 1387981753569902804,
-    "Sheriff": 1418429757607116820, # <-- TROCAR ESTE ID
+    "Sheriff": 1418429757607116820,
     "Major Tx": 1400245578939764736,
-    "Tenente-Coronel": 1418429605303549992, # <-- TROCAR ESTE ID
-    "Coronel": 1418429367368810527, # <-- TROCAR ESTE ID
-    "Us Marshal": 1418429498034094230, # <-- TROCAR ESTE ID
+    "Tenente-Coronel": 1418429605303549992,
+    "Coronel": 1418429367368810527,
+    "Us Marshal": 1418429498034094230,
 }
 
-
-# --- O MODAL (Formulário de Registro) ---
+# --- As classes do bot (Views, Modal) ---
 class FormularioRegistro(ui.Modal, title="Registro - Etapa 2/2: Nome"):
     def __init__(self, patente_selecionada: str):
         super().__init__()
         self.patente_selecionada = patente_selecionada
-
     nome = ui.TextInput(label="Qual o seu nome no jogo/personagem?", style=discord.TextStyle.short, required=True, max_length=50)
-
     async def on_submit(self, interaction: discord.Interaction):
-        # ... (código do formulário continua igual)
         nome_usuario = self.nome.value
         patente_escolhida = self.patente_selecionada
         canal_aprovacao = interaction.guild.get_channel(ID_CANAL_APROVACAO)
@@ -63,11 +59,9 @@ class FormularioRegistro(ui.Modal, title="Registro - Etapa 2/2: Nome"):
         await canal_aprovacao.send(embed=embed_aprovacao, view=view_aprovacao)
         await interaction.response.edit_message(content="✅ Seu registro foi enviado para análise. Aguarde a aprovação.", view=None)
 
-# --- VIEW COM O MENU DE SELEÇÃO DE PATENTE ---
 class ViewSelecaoPatente(ui.View):
     def __init__(self):
         super().__init__(timeout=180)
-
     @ui.select(
         placeholder="Selecione sua patente - Etapa 1/2",
         options=[discord.SelectOption(label=patente) for patente in PATENTES_E_CARGOS.keys()]
@@ -76,31 +70,16 @@ class ViewSelecaoPatente(ui.View):
         patente_escolhida = select.values[0]
         await interaction.response.send_modal(FormularioRegistro(patente_selecionada=patente_escolhida))
 
+# A classe ViewIniciarRegistro foi removida pois não é mais necessária
 
-# --- O BOTÃO INICIAL (Iniciar Registro) ---
-class ViewIniciarRegistro(ui.View):
-    def __init__(self):
-        super().__init__(timeout=None)
-
-    @ui.button(label="Iniciar Registro", style=discord.ButtonStyle.primary, custom_id="iniciar_registro")
-    async def iniciar(self, interaction: discord.Interaction, button: ui.Button):
-        await interaction.response.send_message(
-            content="Por favor, selecione sua patente abaixo para começar.",
-            view=ViewSelecaoPatente(),
-            ephemeral=True
-        )
-
-# --- OS BOTÕES (Aceitar / Reprovar) ---
 class ViewAprovacao(ui.View):
     def __init__(self, membro_id: int, nome: str, patente: str):
         super().__init__(timeout=None)
         self.membro_id = membro_id
         self.nome = nome
         self.patente = patente
-
     @ui.button(label="Aceitar", style=discord.ButtonStyle.success, custom_id="aceitar_registro")
     async def aceitar(self, interaction: discord.Interaction, button: ui.Button):
-        # ... (código de aceitar registro continua igual)
         membro = interaction.guild.get_member(self.membro_id)
         if not membro:
             await interaction.response.send_message("Membro não encontrado no servidor.", ephemeral=True)
@@ -130,10 +109,8 @@ class ViewAprovacao(ui.View):
         except Exception as e:
             await interaction.response.send_message(f"Ocorreu um erro ao aprovar: {e}", ephemeral=True)
             print(e)
-            
     @ui.button(label="Reprovar", style=discord.ButtonStyle.danger, custom_id="reprovar_registro")
     async def reprovar(self, interaction: discord.Interaction, button: ui.Button):
-        # ... (código de reprovar registro continua igual)
         membro = interaction.guild.get_member(self.membro_id)
         button.disabled = True
         self.children[0].disabled = True
@@ -141,7 +118,6 @@ class ViewAprovacao(ui.View):
         await interaction.response.send_message(f"Registro de {membro.mention if membro else 'ID: '+str(self.membro_id)} reprovado.", ephemeral=True)
         if membro:
             await membro.send(f"Seu registro no servidor {interaction.guild.name} foi reprovado.")
-
 
 # --- CÓDIGO PRINCIPAL DO BOT ---
 intents = discord.Intents.default()
@@ -151,7 +127,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 @bot.event
 async def on_ready():
     print(f'Bot {bot.user} está online!')
-    bot.add_view(ViewIniciarRegistro())
+    # A linha bot.add_view(ViewIniciarRegistro()) foi removida
     bot.add_view(ViewAprovacao(membro_id=0, nome="", patente=""))
     try:
         synced = await bot.tree.sync()
@@ -159,26 +135,20 @@ async def on_ready():
     except Exception as e:
         print(e)
 
-
-# --- ALTERADO: Função on_member_join agora também envia mensagem de boas-vindas ---
 @bot.event
 async def on_member_join(member):
-    # Parte 1: Dar o cargo de "SEM REGISTRO"
     cargo_registro = member.guild.get_role(ID_CARGO_SEM_REGISTRO)
     if cargo_registro:
         await member.add_roles(cargo_registro)
         print(f"Cargo '{cargo_registro.name}' adicionado para {member.name}")
 
-    # Parte 2: Enviar a mensagem de Boas-Vindas
     canal_bemvindo = member.guild.get_channel(ID_CANAL_BEMVINDO)
     if canal_bemvindo:
-        # A frase que você pediu, formatada para o Discord
         frase_bemvindo = (
             "Seja bem-vindo à mais nobre elite da Cavalaria de Atlanta — onde honra, força e bravura marcham lado a lado.\n\n"
             "No coração do deserto, sob o sol escaldante e o faroeste sem lei, cavalgamos unidos como irmãos.\n\n"
             "Somos a Cavalaria: firmes como o aço, rápidos como o vento e leais até o fim da estrada."
         )
-        
         embed_bemvindo = discord.Embed(
             title=f"Saudações, Cavaleiro(a) {member.display_name}!",
             description=frase_bemvindo,
@@ -187,34 +157,41 @@ async def on_member_join(member):
         embed_bemvindo.set_image(url=URL_IMAGEM_BEMVINDO)
         embed_bemvindo.set_thumbnail(url=member.display_avatar.url)
         embed_bemvindo.set_footer(text=f"ID do Usuário: {member.id}")
-
-        # Envia a mensagem mencionando o novo membro
         await canal_bemvindo.send(content=member.mention, embed=embed_bemvindo)
 
+# --- NOVO: Comando /registrar para os membros usarem diretamente ---
+@bot.tree.command(name="registrar", description="Inicia o seu processo de registro na cavalaria.")
+async def registrar(interaction: discord.Interaction):
+    # Verifica se o usuário já está registrado (se ele NÃO tem o cargo SEM REGISTRO)
+    cargo_sem_registro = interaction.guild.get_role(ID_CARGO_SEM_REGISTRO)
+    if cargo_sem_registro not in interaction.user.roles:
+        await interaction.response.send_message("Você já está registrado e não precisa usar este comando.", ephemeral=True)
+        return
+        
+    # Envia a primeira etapa do formulário (o menu de seleção) de forma privada
+    await interaction.response.send_message(
+        content="Por favor, selecione sua patente abaixo para começar o registro.",
+        view=ViewSelecaoPatente(),
+        ephemeral=True
+    )
 
-# --- COMANDO para enviar a mensagem de registro inicial ---
-@bot.tree.command(name="enviar_registro", description="Envia a mensagem inicial de registro neste canal.")
-@app_commands.checks.has_permissions(administrator=True)
-async def enviar_registro(interaction: discord.Interaction):
-    await interaction.response.send_message("Por favor, cole a URL da imagem que você quer usar no registro:", ephemeral=True)
-    try:
-        msg = await bot.wait_for(
-            "message",
-            check=lambda m: m.author == interaction.user and m.channel == interaction.channel,
-            timeout=120.0
-        )
-        url_imagem = msg.content
-        await msg.delete()
-        embed = discord.Embed(
-            title="Registre-se",
-            description="Seja bem-vindo à mais nobre elite da Cavalaria de Atlanta — onde honra, força e bravura marcham lado a lado.",
-            color=discord.Color.dark_gold()
-        )
-        embed.set_image(url=url_imagem)
-        await interaction.channel.send(embed=embed, view=ViewIniciarRegistro())
-        await interaction.followup.send("Mensagem de registro enviada!", ephemeral=True)
-    except asyncio.TimeoutError:
-        await interaction.followup.send("Tempo esgotado. Tente o comando novamente.", ephemeral=True)
+# O comando /enviar_registro foi completamente removido
 
+# --- NOVO: Código do servidor web para manter o bot online 24/7 ---
+app = Flask('')
 
+@app.route('/')
+def home():
+    return "Servidor do bot está ativo."
+
+def run():
+    port = int(os.environ.get('PORT', 8080))
+    app.run(host='0.0.0.0', port=port)
+
+def keep_alive():
+    t = Thread(target=run)
+    t.start()
+
+# --- LIGA O BOT ---
+keep_alive()
 bot.run(TOKEN)
