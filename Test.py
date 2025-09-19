@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands, ui
 import asyncio
+import os
 
 # --- CONFIGURAÇÕES ---
 TOKEN = os.getenv("DISCORD_TOKEN")
@@ -217,3 +218,4 @@ async def enviar_registro(interaction: discord.Interaction):
 
 
 bot.run(TOKEN)
+
