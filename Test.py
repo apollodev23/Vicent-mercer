@@ -4,7 +4,7 @@ from discord import app_commands, ui
 import asyncio
 
 # --- CONFIGURAÇÕES ---
-TOKEN = "MTQxODM3NzgwNTgwNDA3NzA4Ng.GEYa1i.Tj775qp1nozkPNnoBc_9Uxk6UW_OG5Kh_kPZVg"
+TOKEN = os.getenv("DISCORD_TOKEN")
 ID_CARGO_SEM_REGISTRO = 1418381392072540320
 ID_CARGO_APROVADOR = 1418381560025055403
 ID_CANAL_APROVACAO = 1418381989211410453
@@ -214,5 +214,6 @@ async def enviar_registro(interaction: discord.Interaction):
         await interaction.followup.send("Mensagem de registro enviada!", ephemeral=True)
     except asyncio.TimeoutError:
         await interaction.followup.send("Tempo esgotado. Tente o comando novamente.", ephemeral=True)
+
 
 bot.run(TOKEN)
