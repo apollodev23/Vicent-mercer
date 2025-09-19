@@ -12,7 +12,7 @@ ID_CARGO_SEM_REGISTRO = 1418420048309256313
 ID_CARGO_APROVADOR = 1401064899597172746
 ID_CANAL_APROVACAO = 1418396682093330493
 ID_CANAL_BEMVINDO = 1418396564342177813 
-URL_IMAGEM_BEMVINDO = "https://cdn.discordapp.com/attachments/1418369933951238342/1418373459951620136/unnamed.png?ex=68cde2b8&is=68cc9138&hm=93fc8e238c1eb5ffd70c846d0a07263fa5399c77683298284afb06a0448426c8&"
+URL_IMAGEM_BEMVINDO = "https://i.pinimg.com/originals/1d/9b/6a/1d9b6aed5dde40b4d58006e44ed6d264.gif"
 
 # Dicionário para mapear o NOME da patente para o ID do CARGO
 PATENTES_E_CARGOS = {
@@ -216,5 +216,6 @@ def keep_alive():
 # --- LIGA O BOT ---
 keep_alive()
 bot.run(TOKEN)
+
 
 
