@@ -16,19 +16,19 @@ URL_IMAGEM_BEMVINDO = "https://cdn.discordapp.com/attachments/141836993395123834
 
 # Dicionário para mapear o NOME da patente para o ID do CARGO
 PATENTES_E_CARGOS = {
-    "Recruta Tx": 1387981757177004137,
-    "Soldado Tx": 1387981756182823046,
-    "Cabo Tx": 1387991889512501410,
-    "3° Sargento Tx": 1387981755763658802,
-    "2° Sargento Tx": 1387981755763658802,
-    "1° Sargento Tx": 1387981755763658802,
-    "Subtenente Tx": 1401423197936549930,
-    "2° Tenente Tx": 1387981754559893626,
-    "1° Tenente Tx": 1387981754559893626,
-    "Capitã Tx": 1387981753569902804,
-    "Capitão Tx": 1387981753569902804,
+    "Recruta": 1387981757177004137,
+    "Soldado": 1387981756182823046,
+    "Cabo": 1387991889512501410,
+    "3° Sargento": 1387981755763658802,
+    "2° Sargento": 1387981755763658802,
+    "1° Sargento": 1387981755763658802,
+    "Subtenente": 1401423197936549930,
+    "2° Tenente": 1387981754559893626,
+    "1° Tenente": 1387981754559893626,
+    "Capitã": 1387981753569902804,
+    "Capitão": 1387981753569902804,
     "Sheriff": 1418429757607116820,
-    "Major Tx": 1400245578939764736,
+    "Major": 1400245578939764736,
     "Tenente-Coronel": 1418429605303549992,
     "Coronel": 1418429367368810527,
     "Us Marshal": 1418429498034094230,
@@ -216,4 +216,5 @@ def keep_alive():
 # --- LIGA O BOT ---
 keep_alive()
 bot.run(TOKEN)
+
 
